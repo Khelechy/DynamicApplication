@@ -1,4 +1,5 @@
 ﻿using DynamicApplication.Shared.Dtos;
+using DynamicApplication.Shared.Dtos.Requests;
 using DynamicApplication.Shared.Enums;
 using DynamicApplication.Shared.Models;
 using System;
@@ -16,6 +17,8 @@ namespace DynamicApplication.Core.Interfaces
         Task<IEnumerable<Question>> GetMultipleAsync(string programId, QuestionTypeEnum? questionType);
 
         Task UpdateProgramQuestion(Question question);
+
+        Task<(bool, string)> SubmitProgramAnswers(SubmitAnswerDto answerDto);
 
     }
 }

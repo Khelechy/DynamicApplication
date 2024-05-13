@@ -2,10 +2,12 @@
 using DynamicApplication.Core.Interfaces;
 using DynamicApplication.Core.Mappers;
 using DynamicApplication.Shared.Dtos;
+using DynamicApplication.Shared.Dtos.Requests;
 using DynamicApplication.Shared.Enums;
 using DynamicApplication.Shared.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +46,43 @@ namespace DynamicApplication.Core.Services
         {
              _context.Questions.Update(question);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<(bool, string)> SubmitProgramAnswers(SubmitAnswerDto answerDto)
+        {
+            var answerList = new List<QuestionAnswer>();
+
+            foreach (var answer in answerDto.Answers)
+            {
+                var question = await GetProgramQuestion(answer.QuestionId);
+                string answerModifier = "";
+
+                if (question == null)
+                {
+                    return new(false, "Question not found");
+                }
+
+                answerModifier = Convert.ToString(answer.QuestionAnswer);
+
+                if (question.QuestionType == QuestionTypeEnum.Multichoice)
+                {
+                    var x = System.Text.Json.JsonSerializer.Serialize(answer.QuestionAnswer);
+                    var answerMulti = JsonConvert.DeserializeObject<List<string>>(x);
+                    if (answerMulti == null || answerMulti.Count == 0)
+                    {
+                        return new(false, "Multichoice answer is empty");
+                    }
+
+                    answerModifier = string.Join(",", answerMulti);
+                }
+
+                answerList.Add(new QuestionAnswer { QuestionId = answer.QuestionId, UserId = answer.UserId, Answer = answerModifier });
+            }
+
+            await _context.AddRangeAsync(answerList);
+            await _context.SaveChangesAsync();
+
+            return new(true, "");
         }
     }
 }
